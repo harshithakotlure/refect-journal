@@ -15,6 +15,7 @@ import {
   hasPassphrase 
 } from './utils/storage';
 import { logAction } from './utils/audit';
+import { THEMES, getStoredTheme, setStoredTheme } from './themes';
 
 function App() {
   const [isSetup, setIsSetup] = useState(false);
@@ -25,6 +26,16 @@ function App() {
   const [lastSaved, setLastSaved] = useState(null);
   const [showInsightsDashboard, setShowInsightsDashboard] = useState(false);
   const [showChangePassphrase, setShowChangePassphrase] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState(getStoredTheme());
+
+  // Handle theme changes
+  const handleThemeChange = (themeName) => {
+    setCurrentTheme(themeName);
+    setStoredTheme(themeName);
+  };
+
+  // Get current theme colors
+  const theme = THEMES[currentTheme];
 
   useEffect(() => {
     // Check if passphrase has been set up
@@ -181,39 +192,73 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div 
+      className="min-h-screen p-4 md:p-8 transition-colors duration-200"
+      style={{ backgroundColor: theme.colors.page }}
+    >
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="glass-effect rounded-2xl p-6 mb-6 shadow-xl">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Header - Minimal */}
+        <header 
+          className="rounded-lg p-4 mb-5 border transition-colors duration-200"
+          style={{ 
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border
+          }}
+        >
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2.5">
+              <div 
+                className="w-8 h-8 rounded-md flex items-center justify-center transition-colors duration-200"
+                style={{ backgroundColor: theme.colors.accent }}
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                <h1 
+                  className="text-base font-semibold transition-colors duration-200"
+                  style={{ color: theme.colors.textPrimary }}
+                >
                   Reflect
                 </h1>
-                <p className="text-sm text-gray-500">Secure Journal</p>
+                <p 
+                  className="text-[10px] transition-colors duration-200"
+                  style={{ color: theme.colors.textTertiary }}
+                >
+                  Private journal
+                </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setShowInsightsDashboard(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-white hover:from-primary-600 hover:to-secondary-600 smooth-transition shadow-md hover:shadow-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md smooth-transition border text-xs font-medium transition-colors duration-200"
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.textPrimary
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.colors.borderHover}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.colors.border}
               >
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Insights</span>
               </button>
               
               <button
                 onClick={handleLock}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/50 hover:bg-white/80 smooth-transition border border-gray-200 text-gray-700 hover:text-gray-900"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md smooth-transition border text-xs transition-colors duration-200"
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.textSecondary
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.colors.borderHover}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.colors.border}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 Lock
@@ -223,10 +268,16 @@ function App() {
         </header>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
           {/* Entry Editor - Takes 2 columns on large screens */}
           <div className="lg:col-span-2">
-            <EntryEditor onSave={handleSaveEntry} isSaving={isSaving} />
+            <EntryEditor 
+              onSave={handleSaveEntry} 
+              isSaving={isSaving}
+              theme={theme}
+              currentTheme={currentTheme}
+              onThemeChange={handleThemeChange}
+            />
           </div>
 
           {/* Entries List - Takes 1 column on large screens */}
@@ -234,36 +285,72 @@ function App() {
             <EntriesList 
               entries={entries} 
               passphrase={passphrase}
+              theme={theme}
             />
           </div>
         </div>
 
-        {/* Footer Stats */}
-        <footer className="glass-effect rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center justify-between flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Footer Stats - Minimal */}
+        <footer 
+          className="rounded-lg p-3 border transition-colors duration-200"
+          style={{ 
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border
+          }}
+        >
+          <div className="flex items-center justify-between flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <svg 
+                  className="w-3 h-3 transition-colors duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  style={{ color: theme.colors.textTertiary }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="text-gray-700 font-medium">{entries.length}</span>
-                <span className="text-gray-500">{entries.length === 1 ? 'entry' : 'entries'}</span>
+                <span 
+                  className="font-medium transition-colors duration-200"
+                  style={{ color: theme.colors.textPrimary }}
+                >
+                  {entries.length}
+                </span>
+                <span 
+                  className="transition-colors duration-200"
+                  style={{ color: theme.colors.textTertiary }}
+                >
+                  {entries.length === 1 ? 'entry' : 'entries'}
+                </span>
               </div>
               
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1">
+                <svg 
+                  className="w-3 h-3 transition-colors duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  style={{ color: theme.colors.textTertiary }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-gray-500">Last saved:</span>
-                <span className="text-gray-700 font-medium">{formatLastSaved()}</span>
+                <span 
+                  className="transition-colors duration-200"
+                  style={{ color: theme.colors.textTertiary }}
+                >
+                  {formatLastSaved()}
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-gray-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div 
+              className="flex items-center gap-1 transition-colors duration-200"
+              style={{ color: theme.colors.textTertiary }}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <span className="text-xs">AES-256-GCM Encrypted</span>
+              <span className="text-[10px]">Encrypted</span>
             </div>
           </div>
         </footer>

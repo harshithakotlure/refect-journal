@@ -22,21 +22,21 @@ export default function UnlockModal({ onUnlock }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-primary-900/50 via-secondary-900/50 to-primary-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-      <div className="glass-effect rounded-2xl p-8 max-w-md w-full">
+    <div className="fixed inset-0 bg-[#f7f6f3] flex items-center justify-center p-4 z-50 animate-fadeIn">
+      <div className="glass-effect rounded-lg p-8 max-w-md w-full">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-[#787774] mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Unlock Your Journal</h2>
-          <p className="text-gray-600">Enter your passphrase to access your entries</p>
+          <h2 className="text-2xl font-bold text-[#37352f] mb-2">Unlock Your Journal</h2>
+          <p className="text-[#5a5956]">Enter your passphrase to access your entries</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="passphrase" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="passphrase" className="block text-sm font-medium text-[#37352f] mb-1">
               Passphrase
             </label>
             <div className="relative">
@@ -45,7 +45,7 @@ export default function UnlockModal({ onUnlock }) {
                 id="passphrase"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none smooth-transition"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-[#e9e9e7] focus:border-[#d3d2cf] outline-none smooth-transition bg-white text-[#37352f]"
                 placeholder="Enter your passphrase"
                 autoFocus
                 disabled={isLoading}
@@ -71,7 +71,7 @@ export default function UnlockModal({ onUnlock }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 smooth-transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#5a5956] text-white font-medium py-3 rounded-lg hover:bg-[#787774] smooth-transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Unlocking...' : 'Unlock'}
           </button>

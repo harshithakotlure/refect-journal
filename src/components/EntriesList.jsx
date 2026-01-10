@@ -3,14 +3,14 @@ import { decryptText } from '../utils/crypto';
 import { logAction } from '../utils/audit';
 
 const MOODS = {
-  great: { emoji: '😊', label: 'Great', bgColor: 'from-green-50 to-green-100', borderColor: 'border-green-300' },
-  good: { emoji: '🙂', label: 'Good', bgColor: 'from-blue-50 to-blue-100', borderColor: 'border-blue-300' },
-  okay: { emoji: '😐', label: 'Okay', bgColor: 'from-gray-50 to-gray-100', borderColor: 'border-gray-300' },
-  down: { emoji: '😔', label: 'Down', bgColor: 'from-purple-50 to-purple-100', borderColor: 'border-purple-300' },
-  stressed: { emoji: '😰', label: 'Stressed', bgColor: 'from-orange-50 to-orange-100', borderColor: 'border-orange-300' },
+  great: { emoji: '😊', label: 'Great', bgColor: 'bg-white', borderColor: 'border-[#e9e9e7]' },
+  good: { emoji: '🙂', label: 'Good', bgColor: 'bg-white', borderColor: 'border-[#e9e9e7]' },
+  okay: { emoji: '😐', label: 'Okay', bgColor: 'bg-white', borderColor: 'border-[#e9e9e7]' },
+  down: { emoji: '😔', label: 'Down', bgColor: 'bg-white', borderColor: 'border-[#e9e9e7]' },
+  stressed: { emoji: '😰', label: 'Stressed', bgColor: 'bg-white', borderColor: 'border-[#e9e9e7]' },
 };
 
-export default function EntriesList({ entries, passphrase, onViewEntry }) {
+export default function EntriesList({ entries, passphrase, onViewEntry, theme }) {
   const [expandedId, setExpandedId] = useState(null);
   const [decryptedContent, setDecryptedContent] = useState({});
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -72,35 +72,79 @@ export default function EntriesList({ entries, passphrase, onViewEntry }) {
 
   if (entries.length === 0) {
     return (
-      <div className="glass-effect rounded-2xl p-6 h-full flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div 
+        className="rounded-lg p-5 h-full flex flex-col items-center justify-center text-center border transition-colors duration-200"
+        style={{
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border
+        }}
+      >
+        <div 
+          className="w-10 h-10 rounded-md flex items-center justify-center mb-2 border transition-colors duration-200"
+          style={{
+            backgroundColor: theme.colors.surfaceHover,
+            borderColor: theme.colors.border
+          }}
+        >
+          <svg 
+            className="w-5 h-5 transition-colors duration-200" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            style={{ color: theme.colors.textTertiary }}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">No entries yet</h3>
-        <p className="text-gray-500 text-sm">Start writing your first journal entry</p>
+        <h3 
+          className="text-sm font-medium mb-0.5 transition-colors duration-200"
+          style={{ color: theme.colors.textPrimary }}
+        >
+          No entries yet
+        </h3>
+        <p 
+          className="text-xs transition-colors duration-200"
+          style={{ color: theme.colors.textTertiary }}
+        >
+          Start writing your first entry
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="glass-effect rounded-2xl p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          Your Entries
+    <div 
+      className="rounded-lg p-5 h-full flex flex-col border transition-colors duration-200"
+      style={{
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.border
+      }}
+    >
+      <div 
+        className="flex items-center justify-between mb-3 pb-3 border-b transition-colors duration-200"
+        style={{ borderColor: theme.colors.border }}
+      >
+        <h2 
+          className="text-base font-semibold transition-colors duration-200"
+          style={{ color: theme.colors.textPrimary }}
+        >
+          Entries
         </h2>
 
         {/* Mood Filter Dropdown */}
         <select
           value={moodFilter}
           onChange={(e) => setMoodFilter(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none smooth-transition"
+          className="text-xs px-2 py-1 rounded-md border outline-none smooth-transition transition-colors duration-200"
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+            color: theme.colors.textSecondary
+          }}
+          onFocus={(e) => e.target.style.borderColor = theme.colors.borderHover}
+          onBlur={(e) => e.target.style.borderColor = theme.colors.border}
         >
-          <option value="all">All Moods</option>
+          <option value="all">All moods</option>
           {Object.entries(MOODS).map(([value, mood]) => (
             <option key={value} value={value}>
               {mood.emoji} {mood.label}
@@ -109,29 +153,48 @@ export default function EntriesList({ entries, passphrase, onViewEntry }) {
         </select>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
         {filteredEntries.map((entry) => {
           const moodData = MOODS[entry.mood] || MOODS.okay;
           return (
           <div
             key={entry.id}
             onClick={() => handleEntryClick(entry)}
-            className={`p-4 rounded-lg border smooth-transition cursor-pointer ${
-              expandedId === entry.id
-                ? `bg-gradient-to-br ${moodData.bgColor} ${moodData.borderColor} shadow-md`
-                : `bg-gradient-to-br ${moodData.bgColor} border-gray-200 hover:${moodData.borderColor} hover:shadow-md opacity-80 hover:opacity-100`
-            }`}
+            className="p-3 rounded-md border smooth-transition cursor-pointer transition-colors duration-200"
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderColor: expandedId === entry.id ? theme.colors.borderHover : theme.colors.border
+            }}
+            onMouseEnter={(e) => {
+              if (expandedId !== entry.id) {
+                e.currentTarget.style.borderColor = theme.colors.borderHover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (expandedId !== entry.id) {
+                e.currentTarget.style.borderColor = theme.colors.border;
+              }
+            }}
           >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{moodData.emoji}</span>
-                <div className="text-xs font-medium text-gray-500">
+            <div className="flex items-start justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">{moodData.emoji}</span>
+                <div 
+                  className="text-[10px] font-medium transition-colors duration-200"
+                  style={{ color: theme.colors.textTertiary }}
+                >
                   {formatDate(entry.timestamp)}
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 {expandedId === entry.id && (
-                  <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg 
+                    className="w-3 h-3 transition-colors duration-200" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                   </svg>
                 )}
@@ -139,21 +202,30 @@ export default function EntriesList({ entries, passphrase, onViewEntry }) {
             </div>
 
             {expandedId === entry.id ? (
-              <div className="text-gray-700 whitespace-pre-wrap">
+              <div 
+                className="whitespace-pre-wrap text-sm leading-relaxed transition-colors duration-200"
+                style={{ color: theme.colors.textPrimary }}
+              >
                 {isDecrypting ? (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <div 
+                    className="flex items-center gap-1.5 transition-colors duration-200"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
+                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Decrypting...
+                    <span className="text-xs">Decrypting...</span>
                   </div>
                 ) : (
                   decryptedContent[entry.id] || 'Loading...'
                 )}
               </div>
             ) : (
-              <div className="text-gray-600 text-sm">
+              <div 
+                className="text-xs leading-relaxed transition-colors duration-200"
+                style={{ color: theme.colors.textSecondary }}
+              >
                 {getPreview(entry)}
                 {getPreview(entry).length >= 50 && '...'}
               </div>
@@ -161,14 +233,14 @@ export default function EntriesList({ entries, passphrase, onViewEntry }) {
 
             {/* Show encrypted data preview in DevTools */}
             {expandedId === entry.id && (
-              <details className="mt-3 text-xs">
-                <summary className="cursor-pointer text-gray-400 hover:text-gray-600">
-                  View encrypted data (DevTools)
+              <details className="mt-2 text-xs">
+                <summary className="cursor-pointer text-[#9b9a97] hover:text-[#787774] text-[10px]">
+                  View encrypted
                 </summary>
-                <div className="mt-2 p-2 bg-gray-100 rounded font-mono text-xs overflow-x-auto">
-                  <div className="text-gray-500">Encrypted: {entry.encryptedData.encrypted.substring(0, 60)}...</div>
-                  <div className="text-gray-500">Salt: {entry.encryptedData.salt}</div>
-                  <div className="text-gray-500">IV: {entry.encryptedData.iv}</div>
+                <div className="mt-1.5 p-2 bg-[#fafafa] rounded-sm font-mono text-[9px] overflow-x-auto border border-[#e9e9e7]">
+                  <div className="text-[#787774] break-all">Encrypted: {entry.encryptedData.encrypted.substring(0, 60)}...</div>
+                  <div className="text-[#787774] break-all mt-0.5">Salt: {entry.encryptedData.salt}</div>
+                  <div className="text-[#787774] break-all mt-0.5">IV: {entry.encryptedData.iv}</div>
                 </div>
               </details>
             )}
@@ -178,8 +250,11 @@ export default function EntriesList({ entries, passphrase, onViewEntry }) {
       </div>
 
       {filteredEntries.length === 0 && entries.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
-          No entries found with this mood filter
+        <div 
+          className="text-center py-6 text-xs transition-colors duration-200"
+          style={{ color: theme.colors.textTertiary }}
+        >
+          No entries for this mood
         </div>
       )}
     </div>
