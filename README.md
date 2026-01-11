@@ -4,6 +4,8 @@
 
 A privacy-first mental wellness journaling app with AI-powered insights, built for the Palo Alto Networks Hackathon.
 
+See [Design Document](Echo_Design_Doc%20(1).pdf) for detailed architecture and design decisions.
+
 ## 🎯 Problem Statement
 
 People struggle to maintain consistent journaling habits due to blank-page anxiety, lack of meaningful reflection, and difficulty identifying emotional patterns over time.
