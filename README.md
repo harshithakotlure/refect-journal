@@ -213,16 +213,6 @@ refect-journal/
 
 ---
 
-## 🎤 Demo Script (3 minutes)
-
-1. **Setup** (20s) - Show passphrase creation, explain encryption
-2. **AI Prompts** (30s) - Select mood, show auto-generated prompts, explain contrast prompts
-3. **Privacy** (30s) - Open DevTools, show only aggregated stats sent to AI
-4. **Wellness Response** (20s) - Save entry, show empathetic AI response
-5. **Weekly Insights** (40s) - Open Insights, show AI summary, explain privacy
-6. **Security** (40s) - Show serverless architecture, no API keys in browser
-
----
 
 ## 🔍 For Reviewers
 
@@ -240,11 +230,3 @@ refect-journal/
 
 ---
 
-## 📄 License
-
-MIT
-
----
-
-**Built for Palo Alto Networks Hackathon 2026**  
-*Demonstrating security-first engineering with thoughtful AI integration*
