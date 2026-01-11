@@ -1,6 +1,8 @@
 // Serverless Function: Generate Journal Writing Prompts
 // Securely calls Claude API without exposing keys to client
 
+import fetch from 'node-fetch';
+
 export default async function handler(req, res) {
   // Only accept POST requests
   if (req.method !== 'POST') {
@@ -41,21 +43,30 @@ export default async function handler(req, res) {
     }
 
     // Build prompt for Claude
-    const systemPrompt = `You are an AI journaling guide.
+    const systemPrompt = `You are an AI journaling guide that generates reflective prompts based on REAL user data.
 
-Primary task: Generate 1 main reflective question based on the user's mood.
+Generate prompts in this EXACT format:
 
-Secondary task (ONLY if past entries context is provided): Generate 1 optional reflective contrast prompt that helps the user notice patterns or changes compared to their past journaling.
+Line 1: ONE main reflective question based on the user's current mood (open-ended, empathetic, under 60 words)
 
-Guidelines for contrast prompts:
-- Keep it brief (1 sentence, under 50 words)
+Line 2 (ONLY if past entries context is provided AND contains clear patterns):
+- ONE contrast prompt that EXPLICITLY references the past patterns provided
+- Must mention specific moods, themes, or keywords from the past data
+- Example: "In earlier entries, work stress came up often. How does today's stress compare?"
+- If past data is vague or insufficient, DO NOT generate a contrast prompt
+
+CRITICAL RULES:
+- Return ONLY the questions themselves, NO labels, NO headers, NO explanations
+- Each question on its own line
+- Questions must end with "?"
 - Be empathetic and non-judgmental
-- Help user notice trends or shifts in mood/patterns
-- Open-ended, not yes/no
-- Example: "How does today's stress compare to the calmer moments you experienced last week?"
-- Return on a new line after the main prompt
+- NEVER invent or fabricate past emotions/events not in the provided data
+- If you cannot confidently reference past patterns, skip the contrast prompt entirely
+- Do NOT give advice or diagnose mental health conditions
 
-Do NOT give advice or diagnose mental health conditions.`;
+Example with clear past patterns:
+What is causing you the most stress right now, and how can you take a small step to address it?
+Your recent entries mentioned work deadlines repeatedly. How does today's stress relate to those earlier concerns?`;
 
     const userMessage = pastEntriesSummary 
       ? `Current mood: ${mood}\nContext from past entries: ${pastEntriesSummary}\n\nGenerate a main prompt and an optional reflective contrast prompt (on separate lines).`
@@ -70,7 +81,7 @@ Do NOT give advice or diagnose mental health conditions.`;
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 150,
         temperature: 0.8,
         system: systemPrompt,
@@ -105,7 +116,24 @@ Do NOT give advice or diagnose mental health conditions.`;
     // Parse main and contrast prompts
     const lines = promptText.split('\n').filter(line => line.trim());
     const mainPrompt = lines[0] || getFallbackPrompt(mood);
-    const contrastPrompt = lines[1] || undefined;
+    let contrastPrompt = lines[1] || undefined;
+
+    // Validate contrast prompt - must reference past data
+    if (contrastPrompt && pastEntriesSummary) {
+      // Check if contrast prompt actually references past patterns
+      const hasReference = /earlier|previous|recent|past|last|before|compared|pattern|trend|shift|differ|change/i.test(contrastPrompt);
+      
+      if (!hasReference) {
+        // AI didn't ground the prompt in past data - discard it
+        console.log(`[${requestId}] Contrast prompt not grounded in past data, discarding`);
+        contrastPrompt = undefined;
+      }
+    }
+
+    // If no past summary provided, ensure no contrast prompt
+    if (!pastEntriesSummary) {
+      contrastPrompt = undefined;
+    }
 
     // Log metadata (no user content)
     console.log(`[${requestId}] Success - Mood: ${mood}, Latency: ${Date.now() - startTime}ms, Model: ${data.model}`);
@@ -148,4 +176,15 @@ function getFallbackPrompt(mood) {
   };
   
   return fallbacks[mood] || "What's on your mind today?";
+}
+
+// Present-focused fallback prompts (when insufficient past data)
+function getPresentFocusedFallback() {
+  const fallbacks = [
+    "As you write today, notice what feels most present for you right now — even small moments can be worth capturing.",
+    "Today's entry can stand on its own. What feels most important to put into words right now?",
+    "You're starting a new thread here. What feels worth remembering from today?"
+  ];
+  
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }

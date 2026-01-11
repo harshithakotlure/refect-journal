@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Lightbulb, MoreHorizontal } from 'lucide-react';
 import { generateJournalPrompts, hasClaudeApiKey } from '../services/ai/claudePromptService';
 import { THEMES } from '../themes';
@@ -35,6 +35,14 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
     }
   };
 
+  // Auto-generate prompts when mood changes
+  useEffect(() => {
+    if (selectedMood && theme.behavior.showPrompts) {
+      console.log('[Prompt] Auto-generating for mood:', selectedMood);
+      handleGeneratePrompt();
+    }
+  }, [selectedMood]);
+
   const handleGeneratePrompt = async () => {
     setIsGeneratingPrompt(true);
     setPromptError(null);
@@ -69,41 +77,120 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
     }
   };
 
-  // Generate privacy-safe summary of past entries (aggregated stats only)
+  // Extract recurring themes and patterns from past entries
+  const extractKeywordsFromText = (text) => {
+    // Handle null/undefined text
+    if (!text || typeof text !== 'string') {
+      return [];
+    }
+    
+    // Common words to ignore
+    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'is', 'was', 'are', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'my', 'me', 'i', 'you', 'it', 'this', 'that', 'from', 'about', 'just', 'so', 'very', 'not', 'like', 'what', 'when', 'how', 'why', 'today', 'feel', 'feeling', 'felt']);
+    
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !stopWords.has(word));
+    
+    return words;
+  };
+
+  // Generate pattern-based summary from past entries (only if clear patterns exist)
   const generatePastEntriesSummary = (entries, currentMood) => {
-    if (!entries || entries.length === 0) return undefined;
+    console.log('[Pattern Detection] Starting analysis...');
+    console.log('[Pattern Detection] Total entries:', entries?.length || 0);
+    
+    // Require at least 3 past entries for meaningful pattern detection
+    if (!entries || entries.length < 3) {
+      console.log('[Pattern Detection] ❌ Not enough entries (need 3+)');
+      return null;
+    }
 
     // Only analyze last 14 days for relevant context
     const twoWeeksAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
     const recentEntries = entries.filter(e => e.timestamp >= twoWeeksAgo);
     
-    if (recentEntries.length === 0) return undefined;
+    console.log('[Pattern Detection] Recent entries (14 days):', recentEntries.length);
+    
+    if (recentEntries.length < 3) {
+      console.log('[Pattern Detection] ❌ Not enough recent entries (need 3+)');
+      return null;
+    }
 
-    // Count mood distribution (aggregated, no content)
+    // 1. Detect mood patterns
     const moodCounts = {};
     recentEntries.forEach(entry => {
+      console.log('[Pattern Detection] Entry mood:', entry.mood, 'has mood:', !!entry.mood);
       if (entry.mood) {
         moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
       }
     });
 
-    // Calculate dominant mood
+    console.log('[Pattern Detection] Mood counts:', moodCounts);
+    console.log('[Pattern Detection] Entries with moods:', Object.values(moodCounts).reduce((a, b) => a + b, 0));
+
     const dominantMood = Object.keys(moodCounts).reduce((a, b) => 
       moodCounts[a] > moodCounts[b] ? a : b, 
       Object.keys(moodCounts)[0]
     );
 
-    // Build privacy-safe summary (only aggregated stats)
-    const totalRecent = recentEntries.length;
-    const moodList = Object.entries(moodCounts)
-      .map(([mood, count]) => `${mood} (${count})`)
-      .join(', ');
-
-    let summary = `Past 2 weeks: ${totalRecent} entries. Moods: ${moodList}.`;
+    // Check if there's a clear mood pattern (at least 50% of entries)
+    const dominantMoodCount = moodCounts[dominantMood] || 0;
+    const hasMoodPattern = dominantMoodCount >= Math.ceil(recentEntries.length * 0.5);
     
-    // Add trend context if current mood differs from dominant
+    console.log('[Pattern Detection] Dominant mood:', dominantMood, 'count:', dominantMoodCount);
+    console.log('[Pattern Detection] Has mood pattern:', hasMoodPattern);
+
+    // 2. Extract recurring themes from entry content
+    const allKeywords = [];
+    recentEntries.forEach(entry => {
+      // Only process entries with content
+      if (entry && entry.content) {
+        const keywords = extractKeywordsFromText(entry.content);
+        allKeywords.push(...keywords);
+      }
+    });
+
+    // Count keyword frequency
+    const keywordFrequency = {};
+    allKeywords.forEach(keyword => {
+      keywordFrequency[keyword] = (keywordFrequency[keyword] || 0) + 1;
+    });
+
+    // Find recurring themes (appearing in at least 2 entries)
+    const recurringThemes = Object.entries(keywordFrequency)
+      .filter(([_, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([keyword, count]) => ({ keyword, count }));
+
+    console.log('[Pattern Detection] Recurring themes:', recurringThemes.length);
+    
+    // Only generate summary if we have clear patterns
+    if (!hasMoodPattern && recurringThemes.length === 0) {
+      console.log('[Pattern Detection] ❌ No clear patterns detected');
+      return null; // No clear patterns detected
+    }
+    
+    console.log('[Pattern Detection] ✅ Patterns found! Generating summary...');
+
+    // Build privacy-safe pattern summary
+    let summary = `Past ${recentEntries.length} entries (last 2 weeks). `;
+    
+    if (hasMoodPattern) {
+      summary += `Dominant mood: ${dominantMood} (${dominantMoodCount} entries). `;
+    } else {
+      summary += `Mood varied: ${Object.entries(moodCounts).map(([m, c]) => `${m}(${c})`).join(', ')}. `;
+    }
+
+    if (recurringThemes.length > 0) {
+      const topThemes = recurringThemes.slice(0, 3).map(t => t.keyword);
+      summary += `Recurring themes: ${topThemes.join(', ')}. `;
+    }
+
+    // Add contrast context if mood changed
     if (currentMood && dominantMood && currentMood !== dominantMood) {
-      summary += ` Today's ${currentMood} mood differs from recent ${dominantMood} pattern.`;
+      summary += `Today's ${currentMood} mood differs from recent ${dominantMood} pattern.`;
     }
 
     return summary;
@@ -263,8 +350,8 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
         )}
       </div>
 
-      {/* AI Prompt Card - Only for Guided style */}
-      {!content.trim() && theme.behavior.showPrompts && (
+      {/* AI Prompt Card - Always visible when prompts exist */}
+      {theme.behavior.showPrompts && (
         <div className="mb-4">
           {/* Loading Shimmer - Minimal */}
           {isGeneratingPrompt && (
@@ -330,16 +417,22 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
               
               {/* Contrast Prompt - Auto-displayed inline */}
               {contrastPrompt && (
-                <div className="mt-2 pt-2 animate-fadeIn" style={{ borderTop: `1px solid ${theme.colors.border}` }}>
+                <div className="mt-3 pt-3 animate-fadeIn" style={{ borderTop: `1px solid ${theme.colors.border}` }}>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <RefreshCw 
+                      className="w-3 h-3 transition-colors duration-200" 
+                      style={{ color: theme.colors.textTertiary }}
+                    />
+                    <p 
+                      className="text-[10px] font-medium uppercase tracking-wider transition-colors duration-200"
+                      style={{ color: theme.colors.textTertiary }}
+                    >
+                      Reflection Prompt
+                    </p>
+                  </div>
                   <p 
-                    className="text-[10px] font-medium uppercase tracking-wider mb-1 transition-colors duration-200"
-                    style={{ color: theme.colors.textTertiary }}
-                  >
-                    Reflection
-                  </p>
-                  <p 
-                    className="text-xs leading-relaxed italic transition-colors duration-200"
-                    style={{ color: theme.colors.textTertiary }}
+                    className="text-sm leading-relaxed italic transition-colors duration-200"
+                    style={{ color: theme.colors.textSecondary }}
                   >
                     {contrastPrompt}
                   </p>
@@ -348,65 +441,9 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
             </div>
           )}
 
-          {/* Error State with Fallback - Minimal */}
-          {!isGeneratingPrompt && promptError && (
-            <div 
-              className="rounded-md p-3 animate-fadeIn border transition-colors duration-200"
-              style={{
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border
-              }}
-            >
-              <div className="flex items-start gap-2">
-                <Lightbulb 
-                  className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 transition-colors duration-200" 
-                  style={{ color: theme.colors.textSecondary }}
-                />
-                <div className="flex-1">
-                  <span 
-                    className="text-[10px] font-medium uppercase tracking-wider block mb-1.5 transition-colors duration-200"
-                    style={{ color: theme.colors.textTertiary }}
-                  >
-                    Prompt
-                  </span>
-                  
-                  {/* Fallback Prompt */}
-                  <p 
-                    className="text-sm leading-relaxed mb-1.5 cursor-pointer smooth-transition transition-colors duration-200"
-                    style={{ color: theme.colors.textPrimary }}
-                    onClick={() => setContent("What's on your mind today?")}
-                    onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.accentHover}
-                    onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textPrimary}
-                  >
-                    What's on your mind today?
-                  </p>
-                  
-                  {/* Error message + Retry */}
-                  <div className="flex items-center justify-between">
-                    <p 
-                      className="text-[10px] transition-colors duration-200"
-                      style={{ color: theme.colors.textTertiary }}
-                    >
-                      Offline
-                    </p>
-                    <button
-                      onClick={handleGeneratePrompt}
-                      className="text-xs font-medium flex items-center gap-1 smooth-transition transition-colors duration-200"
-                      style={{ color: theme.colors.textSecondary }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textPrimary}
-                      onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Retry
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Generate Button - Minimal flat design */}
-          {!isGeneratingPrompt && !currentPrompt && !promptError && (
+          {/* Generate Button - Only show if mood is selected */}
+          {!isGeneratingPrompt && !currentPrompt && !promptError && selectedMood && (
             <button
               onClick={handleGeneratePrompt}
               className="w-full px-3 py-2 border border-dashed rounded-md smooth-transition flex items-center justify-center gap-2 text-xs font-medium transition-colors duration-200"
@@ -431,40 +468,6 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
         </div>
       )}
 
-      {/* Faded Prompt Reference - Shows after typing starts */}
-      {content.trim() && currentPrompt && theme.behavior.showPrompts && (
-        <div 
-          className="mb-2 p-1.5 opacity-40 animate-fadeIn transition-colors duration-200"
-          style={{
-            borderLeft: `2px solid ${theme.colors.border}`
-          }}
-        >
-          <div className="flex items-center gap-1.5">
-            <Lightbulb 
-              className="w-3 h-3 flex-shrink-0 transition-colors duration-200" 
-              style={{ color: theme.colors.textTertiary }}
-            />
-            <p 
-              className="text-[10px] truncate flex-1 transition-colors duration-200"
-              style={{ color: theme.colors.textSecondary }}
-            >
-              {currentPrompt}
-            </p>
-            <button
-              onClick={() => {
-                setCurrentPrompt(null);
-                setContrastPrompt(null);
-              }}
-              className="text-[10px] smooth-transition px-1 transition-colors duration-200"
-              style={{ color: theme.colors.textTertiary }}
-              onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
-              onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textTertiary}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
 
       <textarea
         value={content}

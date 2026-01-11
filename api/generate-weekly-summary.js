@@ -1,6 +1,8 @@
 // Serverless Function: Generate Weekly Insights Summary
 // Securely calls OpenAI API without exposing keys to client
 
+import fetch from 'node-fetch';
+
 export default async function handler(req, res) {
   // Only accept POST requests
   if (req.method !== 'POST') {

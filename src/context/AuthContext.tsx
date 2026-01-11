@@ -1,6 +1,6 @@
 // Authentication Context for passphrase management
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { hasPassphrase, verifyPassphrase, savePassphraseHash } from '../services/storage';
 import { logAction } from '../services/audit';
 

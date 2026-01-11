@@ -3,23 +3,5 @@
     "api/**/*.js": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "CLAUDE_API_KEY": "@claude-api-key",
-    "OPENAI_API_KEY": "@openai-api-key"
-  },
-  "rewrites": [
-    {
-      "source": "/api/generate-prompt",
-      "destination": "/api/generate-prompt.js"
-    },
-    {
-      "source": "/api/wellness-response",
-      "destination": "/api/wellness-response.js"
-    },
-    {
-      "source": "/api/generate-weekly-summary",
-      "destination": "/api/generate-weekly-summary.js"
-    }
-  ]
+  }
 }

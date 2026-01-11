@@ -1,6 +1,6 @@
 // Journal Context for global state management
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { JournalEntry, MoodType } from '../types';
 import { loadEntries, saveEntries } from '../services/storage';
 import { encryptText } from '../services/encryption';

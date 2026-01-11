@@ -9,7 +9,7 @@ export const THEMES = {
     
     // Behavioral flags
     behavior: {
-      showPrompts: false,        // Minimal AI interference
+      showPrompts: true,         // Show prompts (available but not forced)
       showMoodFirst: true,       // Get to writing faster
       lineHeight: '1.5',         // Compact
       textareaPadding: '12px',   // Tight
@@ -39,7 +39,7 @@ export const THEMES = {
     
     // Behavioral flags
     behavior: {
-      showPrompts: false,        // No AI by default
+      showPrompts: true,         // Show prompts (available but not forced)
       showMoodFirst: false,      // Mood comes after writing
       lineHeight: '1.75',        // Spacious for long reads
       textareaPadding: '16px',   // Generous margins
