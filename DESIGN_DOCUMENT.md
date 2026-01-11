@@ -114,7 +114,8 @@ Client (React) → Vercel Serverless Function → AI Provider (Claude/OpenAI) �
 - API keys stored as environment variables on Vercel
 - Never exposed in client-side code or network responses
 - Request IDs and metadata logged server-side (no user content)
-- No data retention; all processing ephemeral
+- No data retention
+
 
 ### Local Storage / Data Handling
 **Storage Schema:**
@@ -258,21 +259,6 @@ Echo follows a tiered data-sharing model based on feature necessity:
 **Mood Labels**: Stored unencrypted for filtering/pattern detection (not sensitive)  
 **Entry Content**: Always encrypted before storage; only decrypted in-memory when viewed
 
-### Ephemeral AI Processing
-**No Server-Side Logging**:
-- All serverless functions process requests without logging user data
-- Responses generated and returned immediately
-- No content logged, stored, or retained on Vercel functions
-- AI providers (Claude/OpenAI) bound by their API terms (no training on API data)
-
-**Request Metadata Only**:
-```javascript
-// Server logs this:
-console.log(`[request-id] Success - Mood: stressed, Latency: 234ms`);
-
-// Server does NOT log this:
-console.log(`Entry content: ${entryContent}`); // NEVER
-```
 
 ### Lock/Unlock Behavior
 **Session-Level Lock**:
