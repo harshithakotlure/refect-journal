@@ -181,20 +181,6 @@ vercel --prod
 
 ---
 
-## 💰 Cost Analysis
-
-### **AI API Costs**
-- Claude prompts: ~$0.003 per request
-- OpenAI responses: ~$0.001 per request
-- Weekly summaries: ~$0.0002 per request
-- **Total for 1000 users/month**: ~$50
-
-### **Hosting**
-- Vercel Free Tier: 100GB bandwidth, serverless auto-scaling
-- **Cost**: $0 for MVP/demo
-
----
-
 ## 🎯 Key Differentiators
 
 1. **Privacy-First AI** - Aggregated stats only, never raw content
