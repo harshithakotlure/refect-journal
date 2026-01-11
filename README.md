@@ -1,6 +1,6 @@
 # Echo – Private AI Journaling
 
-[![Demo Video](https://img.shields.io/badge/Demo-Video-red)](https://youtu.be/4SMPjlJirTU)
+[![Demo Video](https://img.shields.io/badge/Demo-Video-red)](https://youtu.be/FzT9bL4FU9I)
 
 A privacy-first mental wellness journaling app with AI-powered insights, built for the Palo Alto Networks Hackathon.
 
