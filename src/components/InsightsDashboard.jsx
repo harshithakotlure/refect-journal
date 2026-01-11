@@ -110,15 +110,15 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
       return emptyStats;
     }
 
-    // Calculate streak
+    // Calculate current streak (from today backwards)
     const sortedEntries = [...entries].sort((a, b) => b.timestamp - a.timestamp);
     let currentStreak = 0;
     let longestStreak = 0;
-    let tempStreak = 0;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Calculate current streak
     for (let i = 0; i < sortedEntries.length; i++) {
       const entryDate = new Date(sortedEntries[i].timestamp);
       entryDate.setHours(0, 0, 0, 0);
@@ -127,14 +127,30 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
       expectedDate.setDate(today.getDate() - i);
       
       if (entryDate.getTime() === expectedDate.getTime()) {
-        tempStreak++;
-        currentStreak = tempStreak;
+        currentStreak++;
       } else {
         break;
       }
     }
     
-    longestStreak = Math.max(currentStreak, tempStreak);
+    // Calculate longest streak (scan all entries for longest consecutive sequence)
+    const uniqueDates = [...new Set(sortedEntries.map(e => {
+      const d = new Date(e.timestamp);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    }))].sort((a, b) => b - a);
+    
+    let tempStreak = 1;
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const dayDiff = (uniqueDates[i - 1] - uniqueDates[i]) / (24 * 60 * 60 * 1000);
+      if (dayDiff === 1) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
 
     // Mood distribution (all time)
     const moodCount = {};

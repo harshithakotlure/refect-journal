@@ -134,9 +134,9 @@ export default function EntryEditor({ onSave, isSaving, entries = [], theme, cur
       Object.keys(moodCounts)[0]
     );
 
-    // Check if there's a clear mood pattern (at least 50% of entries)
+    // Check if there's a clear mood pattern (at least 40% of entries)
     const dominantMoodCount = moodCounts[dominantMood] || 0;
-    const hasMoodPattern = dominantMoodCount >= Math.ceil(recentEntries.length * 0.5);
+    const hasMoodPattern = dominantMoodCount >= Math.ceil(recentEntries.length * 0.4);
     
     console.log('[Pattern Detection] Dominant mood:', dominantMood, 'count:', dominantMoodCount);
     console.log('[Pattern Detection] Has mood pattern:', hasMoodPattern);
