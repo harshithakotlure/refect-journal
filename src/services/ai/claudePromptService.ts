@@ -80,37 +80,10 @@ const FALLBACK_PROMPTS = {
 // ==================== Helper Functions ====================
 
 /**
- * Get Claude API key from storage or environment
- */
-function getClaudeApiKey(): string | null {
-  // Try localStorage first (client-side)
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('claude_api_key');
-    if (stored) return stored;
-  }
-  
-  // Try environment variable (server-side)
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env.CLAUDE_API_KEY || null;
-  }
-  
-  return null;
-}
-
-/**
- * Set Claude API key in storage
- */
-export function setClaudeApiKey(apiKey: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('claude_api_key', apiKey);
-  }
-}
-
-/**
- * Check if API key is configured
+ * Check if Claude API is available (always true now - serverless handles it)
  */
 export function hasClaudeApiKey(): boolean {
-  return getClaudeApiKey() !== null;
+  return true; // Serverless function handles API key
 }
 
 /**

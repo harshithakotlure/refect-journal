@@ -11,7 +11,7 @@ const MOODS = [
   { emoji: '😰', label: 'Stressed', value: 'stressed', color: 'orange' },
 ];
 
-export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onThemeChange }) {
+export default function EntryEditor({ onSave, isSaving, entries = [], theme, currentTheme, onThemeChange }) {
   const [content, setContent] = useState('');
   const [selectedMood, setSelectedMood] = useState(null);
   const [currentPrompt, setCurrentPrompt] = useState(null);
@@ -40,8 +40,12 @@ export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onT
     setPromptError(null);
 
     try {
+      // Calculate aggregated summary from past entries (privacy-safe)
+      const pastEntriesSummary = generatePastEntriesSummary(entries, selectedMood);
+
       const result = await generateJournalPrompts({
         currentMood: selectedMood ? MOODS.find(m => m.value === selectedMood)?.label : undefined,
+        pastEntriesSummary, // Now sending aggregated data for contrast prompts
       });
 
       setCurrentPrompt(result.mainPrompt);
@@ -51,13 +55,58 @@ export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onT
         success: result.metadata.success,
         latency: `${result.metadata.latencyMs}ms`,
         fallback: result.metadata.fallbackUsed,
+        hasContrast: !!result.contrastPrompt,
       });
+      
+      if (result.contrastPrompt) {
+        console.log('[Prompt] 🔄 Contrast prompt generated (comparing with past patterns)');
+      }
     } catch (error) {
       setPromptError(error.message || 'Failed to generate prompt');
       console.error('[Prompt] Error:', error);
     } finally {
       setIsGeneratingPrompt(false);
     }
+  };
+
+  // Generate privacy-safe summary of past entries (aggregated stats only)
+  const generatePastEntriesSummary = (entries, currentMood) => {
+    if (!entries || entries.length === 0) return undefined;
+
+    // Only analyze last 14 days for relevant context
+    const twoWeeksAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
+    const recentEntries = entries.filter(e => e.timestamp >= twoWeeksAgo);
+    
+    if (recentEntries.length === 0) return undefined;
+
+    // Count mood distribution (aggregated, no content)
+    const moodCounts = {};
+    recentEntries.forEach(entry => {
+      if (entry.mood) {
+        moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+      }
+    });
+
+    // Calculate dominant mood
+    const dominantMood = Object.keys(moodCounts).reduce((a, b) => 
+      moodCounts[a] > moodCounts[b] ? a : b, 
+      Object.keys(moodCounts)[0]
+    );
+
+    // Build privacy-safe summary (only aggregated stats)
+    const totalRecent = recentEntries.length;
+    const moodList = Object.entries(moodCounts)
+      .map(([mood, count]) => `${mood} (${count})`)
+      .join(', ');
+
+    let summary = `Past 2 weeks: ${totalRecent} entries. Moods: ${moodList}.`;
+    
+    // Add trend context if current mood differs from dominant
+    if (currentMood && dominantMood && currentMood !== dominantMood) {
+      summary += ` Today's ${currentMood} mood differs from recent ${dominantMood} pattern.`;
+    }
+
+    return summary;
   };
 
   return (
@@ -219,84 +268,133 @@ export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onT
         <div className="mb-4">
           {/* Loading Shimmer - Minimal */}
           {isGeneratingPrompt && (
-            <div className="bg-white border border-[#e9e9e7] rounded-md p-3 animate-fadeIn">
+            <div 
+              className="rounded-md p-3 animate-fadeIn border transition-colors duration-200"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border
+              }}
+            >
               <div className="space-y-2">
-                <div className="h-2 bg-[#f1f1ef] rounded animate-pulse"></div>
-                <div className="h-2 bg-[#f1f1ef] rounded w-5/6 animate-pulse"></div>
-                <div className="h-2 bg-[#f1f1ef] rounded w-3/4 animate-pulse"></div>
+                <div 
+                  className="h-2 rounded animate-pulse"
+                  style={{ backgroundColor: theme.colors.surfaceActive }}
+                ></div>
+                <div 
+                  className="h-2 rounded w-5/6 animate-pulse"
+                  style={{ backgroundColor: theme.colors.surfaceActive }}
+                ></div>
+                <div 
+                  className="h-2 rounded w-3/4 animate-pulse"
+                  style={{ backgroundColor: theme.colors.surfaceActive }}
+                ></div>
               </div>
             </div>
           )}
 
-          {/* Display Prompt Card - Minimal, flat */}
-          {!isGeneratingPrompt && currentPrompt && (
-            <div 
-              className="bg-white border border-[#e9e9e7] rounded-md p-3 smooth-transition hover:border-[#d3d2cf] cursor-pointer group animate-fadeIn"
-              onClick={() => setContent(currentPrompt)}
-            >
-              <div className="flex items-start gap-2">
-                <Lightbulb className="w-3.5 h-3.5 text-[#787774] flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-medium text-[#9b9a97] uppercase tracking-wider">Prompt</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGeneratePrompt();
-                      }}
-                      disabled={isGeneratingPrompt}
-                      className="text-xs text-[#5a5956] hover:text-[#37352f] font-medium flex items-center gap-1 disabled:opacity-50 smooth-transition"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      New
-                    </button>
-                  </div>
-                  
-                  {/* Main Prompt - Clickable */}
-                  <p className="text-[#37352f] text-sm leading-relaxed">
-                    {currentPrompt}
+          {/* Main Prompt - Auto-displayed inline */}
+          {!isGeneratingPrompt && currentPrompt && !promptError && (
+            <div className="space-y-2 mb-3 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles 
+                    className="w-3 h-3 transition-colors duration-200" 
+                    style={{ color: theme.colors.textTertiary }}
+                  />
+                  <span 
+                    className="text-[10px] font-medium uppercase tracking-wider transition-colors duration-200"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
+                    Writing Prompt
+                  </span>
+                </div>
+                <button
+                  onClick={handleGeneratePrompt}
+                  disabled={isGeneratingPrompt}
+                  className="text-[10px] font-medium flex items-center gap-1 disabled:opacity-50 smooth-transition transition-colors duration-200"
+                  style={{ color: theme.colors.textTertiary }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
+                  onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textTertiary}
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  New
+                </button>
+              </div>
+              
+              <p 
+                className="text-sm leading-relaxed italic transition-colors duration-200"
+                style={{ color: theme.colors.textSecondary }}
+              >
+                {currentPrompt}
+              </p>
+              
+              {/* Contrast Prompt - Auto-displayed inline */}
+              {contrastPrompt && (
+                <div className="mt-2 pt-2 animate-fadeIn" style={{ borderTop: `1px solid ${theme.colors.border}` }}>
+                  <p 
+                    className="text-[10px] font-medium uppercase tracking-wider mb-1 transition-colors duration-200"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
+                    Reflection
                   </p>
-                  
-                  {/* Contrast Prompt - Very subtle */}
-                  {contrastPrompt && (
-                    <p className="text-[#787774] text-xs mt-2 leading-relaxed border-l border-[#e9e9e7] pl-2">
-                      {contrastPrompt}
-                    </p>
-                  )}
-                  
-                  {/* Click hint - minimal */}
-                  <p className="text-[10px] text-[#9b9a97] mt-1.5 opacity-0 group-hover:opacity-100 smooth-transition">
-                    Click to use
+                  <p 
+                    className="text-xs leading-relaxed italic transition-colors duration-200"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
+                    {contrastPrompt}
                   </p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* Error State with Fallback - Minimal */}
           {!isGeneratingPrompt && promptError && (
-            <div className="bg-white border border-[#e9e9e7] rounded-md p-3 animate-fadeIn">
+            <div 
+              className="rounded-md p-3 animate-fadeIn border transition-colors duration-200"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border
+              }}
+            >
               <div className="flex items-start gap-2">
-                <Lightbulb className="w-3.5 h-3.5 text-[#787774] flex-shrink-0 mt-0.5" />
+                <Lightbulb 
+                  className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 transition-colors duration-200" 
+                  style={{ color: theme.colors.textSecondary }}
+                />
                 <div className="flex-1">
-                  <span className="text-[10px] font-medium text-[#9b9a97] uppercase tracking-wider block mb-1.5">
+                  <span 
+                    className="text-[10px] font-medium uppercase tracking-wider block mb-1.5 transition-colors duration-200"
+                    style={{ color: theme.colors.textTertiary }}
+                  >
                     Prompt
                   </span>
                   
                   {/* Fallback Prompt */}
                   <p 
-                    className="text-[#37352f] text-sm leading-relaxed mb-1.5 cursor-pointer hover:text-[#000]"
+                    className="text-sm leading-relaxed mb-1.5 cursor-pointer smooth-transition transition-colors duration-200"
+                    style={{ color: theme.colors.textPrimary }}
                     onClick={() => setContent("What's on your mind today?")}
+                    onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.accentHover}
+                    onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textPrimary}
                   >
                     What's on your mind today?
                   </p>
                   
                   {/* Error message + Retry */}
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-[#9b9a97]">Offline</p>
+                    <p 
+                      className="text-[10px] transition-colors duration-200"
+                      style={{ color: theme.colors.textTertiary }}
+                    >
+                      Offline
+                    </p>
                     <button
                       onClick={handleGeneratePrompt}
-                      className="text-xs text-[#5a5956] hover:text-[#37352f] font-medium flex items-center gap-1 smooth-transition"
+                      className="text-xs font-medium flex items-center gap-1 smooth-transition transition-colors duration-200"
+                      style={{ color: theme.colors.textSecondary }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textPrimary}
+                      onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
                     >
                       <RefreshCw className="w-3 h-3" />
                       Retry
@@ -311,21 +409,45 @@ export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onT
           {!isGeneratingPrompt && !currentPrompt && !promptError && (
             <button
               onClick={handleGeneratePrompt}
-              className="w-full px-3 py-2 bg-white border border-dashed border-[#e9e9e7] rounded-md hover:border-[#d3d2cf] smooth-transition flex items-center justify-center gap-2 text-[#787774] hover:text-[#37352f]"
+              className="w-full px-3 py-2 border border-dashed rounded-md smooth-transition flex items-center justify-center gap-2 text-xs font-medium transition-colors duration-200"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                color: theme.colors.textSecondary
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.borderHover;
+                e.currentTarget.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.border;
+                e.currentTarget.style.color = theme.colors.textSecondary;
+              }}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="text-xs font-medium">Get prompt</span>
+              <span>Get prompt</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Faded Prompt - Only for Guided style */}
+      {/* Faded Prompt Reference - Shows after typing starts */}
       {content.trim() && currentPrompt && theme.behavior.showPrompts && (
-        <div className="mb-3 bg-white border border-[#e9e9e7] rounded-md p-2 opacity-50 animate-fadeIn">
+        <div 
+          className="mb-2 p-1.5 opacity-40 animate-fadeIn transition-colors duration-200"
+          style={{
+            borderLeft: `2px solid ${theme.colors.border}`
+          }}
+        >
           <div className="flex items-center gap-1.5">
-            <Lightbulb className="w-3 h-3 text-[#9b9a97] flex-shrink-0" />
-            <p className="text-[10px] text-[#787774] truncate flex-1">
+            <Lightbulb 
+              className="w-3 h-3 flex-shrink-0 transition-colors duration-200" 
+              style={{ color: theme.colors.textTertiary }}
+            />
+            <p 
+              className="text-[10px] truncate flex-1 transition-colors duration-200"
+              style={{ color: theme.colors.textSecondary }}
+            >
               {currentPrompt}
             </p>
             <button
@@ -333,7 +455,10 @@ export default function EntryEditor({ onSave, isSaving, theme, currentTheme, onT
                 setCurrentPrompt(null);
                 setContrastPrompt(null);
               }}
-              className="text-[10px] text-[#9b9a97] hover:text-[#787774] smooth-transition px-1"
+              className="text-[10px] smooth-transition px-1 transition-colors duration-200"
+              style={{ color: theme.colors.textTertiary }}
+              onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
+              onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textTertiary}
             >
               ✕
             </button>

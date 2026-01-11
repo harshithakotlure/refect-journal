@@ -6,7 +6,7 @@ import type { EncryptedData } from '../../types';
 /**
  * Derive a cryptographic key from a passphrase using PBKDF2
  */
-async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(passphrase: string, salt: Uint8Array | ArrayBuffer): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const passphraseKey = await crypto.subtle.importKey(
     'raw',
@@ -19,7 +19,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt,
+      salt: salt as BufferSource,
       iterations: ENCRYPTION_CONFIG.ITERATIONS,
       hash: 'SHA-256',
     },
@@ -48,7 +48,7 @@ export async function encryptText(text: string, passphrase: string): Promise<Enc
   const encryptedData = await crypto.subtle.encrypt(
     {
       name: ENCRYPTION_CONFIG.ALGORITHM,
-      iv: iv,
+      iv: iv as BufferSource,
     },
     key,
     data
@@ -81,10 +81,10 @@ export async function decryptText(encryptedData: EncryptedData, passphrase: stri
     const decryptedData = await crypto.subtle.decrypt(
       {
         name: ENCRYPTION_CONFIG.ALGORITHM,
-        iv: ivBuffer,
+        iv: ivBuffer as BufferSource,
       },
       key,
-      encryptedBuffer
+      encryptedBuffer as BufferSource
     );
 
     // Convert back to text
@@ -96,10 +96,10 @@ export async function decryptText(encryptedData: EncryptedData, passphrase: stri
 }
 
 /**
- * Helper: Convert ArrayBuffer to Base64
+ * Helper: Convert ArrayBuffer or Uint8Array to Base64
  */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);

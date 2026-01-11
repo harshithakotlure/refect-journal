@@ -11,7 +11,9 @@ import {
   XCircle,
   AlertTriangle,
   Flame,
-  Heart
+  Heart,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { loadEntries, clearAllData } from '../utils/storage';
 import { logAction } from '../utils/audit';
@@ -28,12 +30,16 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
   const [entries, setEntries] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [weeklySummary, setWeeklySummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [stats, setStats] = useState({
     totalEntries: 0,
     currentStreak: 0,
     longestStreak: 0,
     avgLength: 0,
     moodDistribution: {},
+    weeklyMoodDistribution: {},
+    weeklyEntries: 0,
     bestWritingTime: '',
     mostProductiveDay: '',
   });
@@ -41,21 +47,67 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
   useEffect(() => {
     const loadedEntries = loadEntries();
     setEntries(loadedEntries);
-    calculateStats(loadedEntries);
+    const calculatedStats = calculateStats(loadedEntries);
+    
+    // Generate AI weekly summary
+    if (calculatedStats.weeklyEntries > 0) {
+      generateWeeklySummary(calculatedStats);
+    }
   }, []);
+
+  const generateWeeklySummary = async (statsData) => {
+    setSummaryLoading(true);
+    
+    try {
+      const response = await fetch('/api/generate-weekly-summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          totalEntries: statsData.totalEntries,
+          weeklyEntries: statsData.weeklyEntries,
+          moodDistribution: statsData.weeklyMoodDistribution,
+          currentStreak: statsData.currentStreak,
+          mostProductiveDay: statsData.mostProductiveDay
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate summary');
+      }
+
+      const data = await response.json();
+      setWeeklySummary(data.summary);
+      
+      // Log success
+      if (data.metadata?.success) {
+        logAction('weekly_summary_generated', `Latency: ${data.metadata.latencyMs}ms`);
+      }
+    } catch (error) {
+      console.error('Error generating weekly summary:', error);
+      // Set fallback summary
+      setWeeklySummary("Keep writing to discover patterns in your journaling journey.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   const calculateStats = (entries) => {
     if (entries.length === 0) {
-      setStats({
+      const emptyStats = {
         totalEntries: 0,
         currentStreak: 0,
         longestStreak: 0,
         avgLength: 0,
         moodDistribution: {},
+        weeklyMoodDistribution: {},
+        weeklyEntries: 0,
         bestWritingTime: 'N/A',
         mostProductiveDay: 'N/A',
-      });
-      return;
+      };
+      setStats(emptyStats);
+      return emptyStats;
     }
 
     // Calculate streak
@@ -84,11 +136,21 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
     
     longestStreak = Math.max(currentStreak, tempStreak);
 
-    // Mood distribution
+    // Mood distribution (all time)
     const moodCount = {};
     entries.forEach(entry => {
       if (entry.mood) {
         moodCount[entry.mood] = (moodCount[entry.mood] || 0) + 1;
+      }
+    });
+
+    // Weekly mood distribution (last 7 days)
+    const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const weeklyEntries = entries.filter(entry => entry.timestamp >= weekAgo);
+    const weeklyMoodCount = {};
+    weeklyEntries.forEach(entry => {
+      if (entry.mood) {
+        weeklyMoodCount[entry.mood] = (weeklyMoodCount[entry.mood] || 0) + 1;
       }
     });
 
@@ -118,15 +180,20 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
     // Average length (would need decryption - placeholder for now)
     const avgLength = Math.floor(Math.random() * 200) + 100; // Placeholder
 
-    setStats({
+    const calculatedStats = {
       totalEntries: entries.length,
       currentStreak,
       longestStreak,
       avgLength,
       moodDistribution: moodCount,
+      weeklyMoodDistribution: weeklyMoodCount,
+      weeklyEntries: weeklyEntries.length,
       bestWritingTime,
       mostProductiveDay,
-    });
+    };
+    
+    setStats(calculatedStats);
+    return calculatedStats;
   };
 
   const handleExportData = () => {
@@ -179,6 +246,34 @@ export default function InsightsDashboard({ onClose, onChangePassphrase, onDataD
         </div>
 
         <div className="p-6 space-y-6">
+          {/* AI Weekly Summary */}
+          {stats.weeklyEntries > 0 && (
+            <section className="bg-gradient-to-br from-[#fafafa] to-[#f7f6f3] rounded-xl p-6 border border-[#e9e9e7]">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#37352f] flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-[#37352f] mb-2">This Week's Reflection</h3>
+                  {summaryLoading ? (
+                    <div className="flex items-center gap-2 text-[#5a5956]">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Generating your weekly insight...</span>
+                    </div>
+                  ) : weeklySummary ? (
+                    <p className="text-[#37352f] leading-relaxed text-[15px]">
+                      {weeklySummary}
+                    </p>
+                  ) : (
+                    <p className="text-[#5a5956] text-sm italic">
+                      Keep writing to see AI-generated insights about your week.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Key Statistics */}
           <section>
             <h3 className="text-lg font-semibold text-[#37352f] mb-4 flex items-center gap-2">

@@ -271,13 +271,14 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
           {/* Entry Editor - Takes 2 columns on large screens */}
           <div className="lg:col-span-2">
-            <EntryEditor 
-              onSave={handleSaveEntry} 
-              isSaving={isSaving}
-              theme={theme}
-              currentTheme={currentTheme}
-              onThemeChange={handleThemeChange}
-            />
+          <EntryEditor 
+            onSave={handleSaveEntry} 
+            isSaving={isSaving}
+            entries={entries}
+            theme={theme}
+            currentTheme={currentTheme}
+            onThemeChange={handleThemeChange}
+          />
           </div>
 
           {/* Entries List - Takes 1 column on large screens */}
