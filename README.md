@@ -24,16 +24,15 @@ Echo combines **zero-knowledge encryption** with **thoughtful AI integration** t
 - Web Crypto API for security
 
 ### **Serverless Functions (Node.js)**
-- `/api/generate-prompt` - Claude 3.5 Sonnet for writing prompts
-- `/api/wellness-response` - GPT-4o-mini for empathetic responses
+- `/api/generate-prompt` - Claude 3 Haiku for writing prompts
 - `/api/generate-weekly-summary` - GPT-4o-mini for pattern insights
 - API keys stored as environment variables (never exposed to client)
 
 ### **Privacy-First AI**
-- **Pre-write prompts**: Only mood sent to AI
+- **Pre-write prompts**: Only mood + aggregated patterns sent to AI
 - **Reflective contrast**: Only aggregated stats (e.g., "stressed: 3, great: 2")
 - **Weekly summaries**: Only entry counts and mood distribution
-- **Wellness responses**: Entry content sent but never logged server-side
+- **Zero raw text exposure**: No journal content sent to AI - only metadata
 
 ---
 
@@ -212,7 +211,6 @@ vercel --prod
 refect-journal/
 ├── api/                    # Serverless functions
 │   ├── generate-prompt.js          # Claude prompts
-│   ├── wellness-response.js        # OpenAI wellness
 │   └── generate-weekly-summary.js  # Weekly insights
 ├── src/
 │   ├── components/         # React components

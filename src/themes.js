@@ -9,7 +9,7 @@ export const THEMES = {
     
     // Behavioral flags
     behavior: {
-      showPrompts: true,         // Show prompts (available but not forced)
+      showPrompts: false,        // No prompts - just write
       showMoodFirst: true,       // Get to writing faster
       lineHeight: '1.5',         // Compact
       textareaPadding: '12px',   // Tight
