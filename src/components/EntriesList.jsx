@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Lock } from 'lucide-react';
 import { decryptText } from '../utils/crypto';
 import { logAction } from '../utils/audit';
 
@@ -41,6 +42,22 @@ export default function EntriesList({ entries, passphrase, onViewEntry, theme })
     }
   };
 
+  const handleLockEntry = (e, entryId) => {
+    e.stopPropagation(); // Prevent triggering handleEntryClick
+    
+    // Clear the decrypted content from state
+    setDecryptedContent(prev => {
+      const newContent = { ...prev };
+      delete newContent[entryId];
+      return newContent;
+    });
+    
+    // Collapse the entry
+    setExpandedId(null);
+    
+    logAction('entry_locked', `Entry re-locked and contents cleared from memory`);
+  };
+
   const getPreview = (entry) => {
     if (decryptedContent[entry.id]) {
       return decryptedContent[entry.id].substring(0, 50);
@@ -51,7 +68,11 @@ export default function EntriesList({ entries, passphrase, onViewEntry, theme })
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    // Normalize both dates to midnight for accurate day comparison
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.floor((nowOnly - dateOnly) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
       return `Today at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
@@ -186,17 +207,29 @@ export default function EntriesList({ entries, passphrase, onViewEntry, theme })
                   {formatDate(entry.timestamp)}
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {expandedId === entry.id && (
-                  <svg 
-                    className="w-3 h-3 transition-colors duration-200" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                    style={{ color: theme.colors.textTertiary }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                  </svg>
+                  <>
+                    <button
+                      onClick={(e) => handleLockEntry(e, entry.id)}
+                      className="p-1 rounded hover:bg-[#f1f1ef] transition-colors duration-200"
+                      title="Re-lock entry"
+                    >
+                      <Lock 
+                        className="w-3 h-3 transition-colors duration-200" 
+                        style={{ color: theme.colors.textTertiary }}
+                      />
+                    </button>
+                    <svg 
+                      className="w-3 h-3 transition-colors duration-200" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                      style={{ color: theme.colors.textTertiary }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
                 )}
               </div>
             </div>
@@ -231,19 +264,6 @@ export default function EntriesList({ entries, passphrase, onViewEntry, theme })
               </div>
             )}
 
-            {/* Show encrypted data preview in DevTools */}
-            {expandedId === entry.id && (
-              <details className="mt-2 text-xs">
-                <summary className="cursor-pointer text-[#9b9a97] hover:text-[#787774] text-[10px]">
-                  View encrypted
-                </summary>
-                <div className="mt-1.5 p-2 bg-[#fafafa] rounded-sm font-mono text-[9px] overflow-x-auto border border-[#e9e9e7]">
-                  <div className="text-[#787774] break-all">Encrypted: {entry.encryptedData.encrypted.substring(0, 60)}...</div>
-                  <div className="text-[#787774] break-all mt-0.5">Salt: {entry.encryptedData.salt}</div>
-                  <div className="text-[#787774] break-all mt-0.5">IV: {entry.encryptedData.iv}</div>
-                </div>
-              </details>
-            )}
           </div>
           );
         })}

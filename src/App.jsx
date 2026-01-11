@@ -220,7 +220,7 @@ function App() {
                   className="text-base font-semibold transition-colors duration-200"
                   style={{ color: theme.colors.textPrimary }}
                 >
-                  Reflect
+                  Echo
                 </h1>
                 <p 
                   className="text-[10px] transition-colors duration-200"

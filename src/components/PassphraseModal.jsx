@@ -38,8 +38,8 @@ export default function PassphraseModal({ onSetPassphrase }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-[#37352f] mb-2">Welcome to Reflect</h2>
-          <p className="text-[#5a5956]">Create a secure passphrase to encrypt your journal entries</p>
+          <h2 className="text-2xl font-bold text-[#37352f] mb-2">Welcome to Echo</h2>
+          <p className="text-[#5a5956]">Create a passphrase to encrypt your journal entries</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

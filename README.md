@@ -1,4 +1,4 @@
-# Reflect - AI-Powered Journaling Companion
+# Echo – Private AI Journaling
 
 A privacy-first mental wellness journaling app with AI-powered insights, built for the Palo Alto Networks Hackathon.
 
@@ -8,7 +8,7 @@ People struggle to maintain consistent journaling habits due to blank-page anxie
 
 ## ✨ Solution
 
-Reflect combines **zero-knowledge encryption** with **thoughtful AI integration** to create a secure, empathetic journaling experience that helps users:
+Echo combines **zero-knowledge encryption** with **thoughtful AI integration** to create a secure, empathetic journaling experience that helps users:
 - Overcome writer's block with mood-based prompts
 - Notice patterns through reflective contrast questions
 - Gain weekly insights without compromising privacy
